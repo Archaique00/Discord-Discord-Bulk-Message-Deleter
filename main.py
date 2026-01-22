@@ -1,34 +1,4 @@
 #!/usr/bin/env python3
-"""
-Discord Bulk Message Deleter
-Supprime automatiquement tous vos messages sur les serveurs/MPs sélectionnés
-
-📌 COMMENT RÉCUPÉRER VOTRE TOKEN DISCORD:
-
-=== MÉTHODE 1: NAVIGATEUR WEB (discord.com) ===
-1. Ouvrez Discord dans votre navigateur (https://discord.com/app)
-2. Appuyez sur F12 pour ouvrir les outils développeur
-3. Allez dans l'onglet "Console"
-4. Collez ce code et appuyez sur Entrée:
-
-(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()
-
-5. Votre token s'affiche entre guillemets
-6. Copiez-le (sans les guillemets) dans le fichier token.txt
-
-=== MÉTHODE 2: APPLICATION DESKTOP ===
-1. Ouvrez Discord Desktop
-2. Appuyez sur Ctrl+Shift+I (Windows/Linux) ou Cmd+Option+I (Mac)
-3. Allez dans l'onglet "Console"
-4. Collez le même code que ci-dessus
-5. Copiez le token dans token.txt
-
-⚠️  ATTENTION: Ne partagez JAMAIS votre token! C'est comme votre mot de passe.
-   Si quelqu'un a votre token, il peut contrôler totalement votre compte.
-
-📁 Le token doit être dans un fichier nommé "token.txt" dans le même dossier que ce script.
-"""
-
 import json
 import os
 import sys
@@ -548,3 +518,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -361,7 +361,13 @@ class MessageDeleter:
         
         # Sauvegarde JSON
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"messages_{location_name.replace(' ', '_')}_{timestamp}.json"
+        # Nettoyer le nom de location pour les caractères invalides
+        safe_location_name = location_name.replace(' ', '_')
+        invalid_chars = '<>:"/\\|?*'
+        for char in invalid_chars:
+            safe_location_name = safe_location_name.replace(char, '_')
+        
+        filename = f"messages_{safe_location_name}_{timestamp}.json"
         self.save_messages_to_json(messages, filename)
         
         # Suppression

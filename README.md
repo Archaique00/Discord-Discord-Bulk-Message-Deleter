@@ -8,6 +8,7 @@ Automatically delete all your Discord messages on selected servers and private c
 - 📊 **Two modes**: Automatic (batch) or Verification mode
 - 💾 **JSON backup** of scraped messages
 - 🎯 **Selective deletion** (choose specific servers/DMs)
+- 🛡️ **Whitelist/Exclusion system** (protect important servers/DMs)
 - 📈 **Detailed statistics** and success rate
 - ⚡ **Automatic rate limit handling**
 - 🔄 **Smart retry** on network errors
@@ -44,21 +45,7 @@ pip install requests
 4. Paste this code and press Enter:
 
 ```javascript
-window.webpackChunkdiscord_app.push([
-    [Symbol()], {}, req => {
-        if (!req.c) return;
-        for (let m of Object.values(req.c)) {
-            if (!m.exports || m.exports === window) continue;
-            if (m.exports?.getToken) return console.log('"' + m.exports.getToken() + '"');
-            for (let ex in m.exports) {
-                if (m.exports?.[ex]?.getToken && m.exports[ex][Symbol.toStringTag] !== 'IntlMessagesProxy') {
-                    return console.log('"' + m.exports.getToken() + '"');
-                }
-            }
-        }
-    },
-]);
-window.webpackChunkdiscord_app.pop();
+(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()
 ```
 
 5. Your token appears in quotes

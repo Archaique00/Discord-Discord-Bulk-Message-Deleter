@@ -32,6 +32,110 @@ pip install requests
 1. Download `discord_bulk_deleter.py`
 2. Create a `token.txt` file in the same directory
 3. Add your Discord token to `token.txt`
+4. (Optional) Create a `whitelist.txt` file to exclude servers/DMs
+
+---
+
+## 🛡️ Whitelist / Exclusion System
+
+### What is it?
+
+The whitelist allows you to protect specific servers or DMs from deletion. Any server or conversation whose ID is in the whitelist will be **completely excluded** from the deletion process.
+
+### How to Set Up the Whitelist
+
+#### Step 1: Enable Discord Developer Mode
+
+1. Open Discord (web or desktop)
+2. Go to **Settings** (⚙️ icon)
+3. Go to **Advanced** (or **App Settings → Advanced**)
+4. Enable **Developer Mode** (toggle ON)
+
+#### Step 2: Get Server/DM IDs
+
+**For a Server:**
+1. Right-click on the server icon (left sidebar)
+2. Click **"Copy Server ID"** (or **"Copy ID"**)
+3. The ID is now in your clipboard
+
+**For a DM/Conversation:**
+1. Right-click on the conversation name
+2. Click **"Copy Channel ID"** (or **"Copy ID"**)
+3. The ID is now in your clipboard
+
+#### Step 3: Create the Whitelist File
+
+1. In the same folder as `discord_bulk_deleter.py`, create a new file named **`whitelist.txt`**
+2. Paste the IDs you want to exclude (one per line)
+3. You can add comments with `#`
+
+**Example `whitelist.txt`:**
+
+```txt
+# My important servers
+123456789012345678
+987654321098765432
+
+# Family group chat
+111222333444555666
+
+# Work-related DMs
+777888999000111222
+555666777888999000
+
+# Friend's server - don't touch!
+444555666777888999
+```
+
+#### Step 4: Run the Script
+
+When you run the script, it will automatically:
+- Load the whitelist
+- Display how many IDs are excluded
+- Remove whitelisted servers/DMs from the selection list
+
+### Features
+
+- ✅ **Automatic exclusion**: Whitelisted servers/DMs don't even appear in the selection list
+- ✅ **Comment support**: Lines starting with `#` are ignored
+- ✅ **Empty lines ignored**: You can organize your whitelist with blank lines
+- ✅ **Statistics**: Shows how many items were excluded
+- ✅ **Optional**: If the file doesn't exist, the script works normally without exclusions
+- ✅ **Safe**: IDs in whitelist are 100% protected from deletion
+
+### Example Output
+
+When the script runs with a whitelist:
+
+```
+✓ Token loaded from 'token.txt'
+✓ Whitelist loaded: 5 ID(s) excluded
+ℹ Excluded IDs: 123456789012345678, 987654321098765432, 111222333444555666...
+
+ℹ Retrieving server list...
+⚠ 2 server(s) excluded by whitelist
+✓ 8 server(s) found:
+
+  [1] Gaming Server (ID: 123...)
+  [2] Study Group (ID: 456...)
+  [3] Music Community (ID: 789...)
+  ...
+```
+
+### Common Use Cases
+
+- 🏢 **Work servers** - Keep professional communications safe
+- 👨‍👩‍👧‍👦 **Family/friend groups** - Protect personal conversations
+- 📚 **Important communities** - Preserve membership in key servers
+- 💼 **Business contacts** - Don't delete client communications
+- 🎮 **Main gaming servers** - Keep your clan/guild intact
+
+### Tips
+
+- Start by adding your most important servers to the whitelist
+- Run the script once to see the list - you can always cancel and add more IDs
+- Keep a backup copy of your `whitelist.txt` file
+- You can enable/disable the whitelist by renaming the file (e.g., `whitelist.txt.bak`)
 
 ---
 
@@ -45,7 +149,21 @@ pip install requests
 4. Paste this code and press Enter:
 
 ```javascript
-(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()
+window.webpackChunkdiscord_app.push([
+    [Symbol()], {}, req => {
+        if (!req.c) return;
+        for (let m of Object.values(req.c)) {
+            if (!m.exports || m.exports === window) continue;
+            if (m.exports?.getToken) return console.log('"' + m.exports.getToken() + '"');
+            for (let ex in m.exports) {
+                if (m.exports?.[ex]?.getToken && m.exports[ex][Symbol.toStringTag] !== 'IntlMessagesProxy') {
+                    return console.log('"' + m.exports.getToken() + '"');
+                }
+            }
+        }
+    },
+]);
+window.webpackChunkdiscord_app.pop();
 ```
 
 5. Your token appears in quotes
@@ -166,10 +284,21 @@ You can modify these settings at the top of the script:
 
 ```python
 TOKEN_FILE = "token.txt"              # Token file name
+WHITELIST_FILE = "whitelist.txt"      # Whitelist file name
 DELAY_BETWEEN_DELETIONS = 1.5         # Seconds between each deletion
 DELAY_BETWEEN_REQUESTS = 2.0          # Seconds between API requests
 REQ_TIMEOUT = 10                      # HTTP request timeout
 MAX_RETRIES = 3                       # Maximum retry attempts
+```
+
+### File Structure
+
+```
+your_folder/
+├── discord_bulk_deleter.py
+├── token.txt              # Your Discord token (required)
+├── whitelist.txt          # IDs to exclude (optional)
+└── messages_*.json        # Backup files (generated if enabled)
 ```
 
 ---
@@ -203,7 +332,13 @@ A: No, this is a Python script for desktop use only.
 <details>
 <summary><b>Q: Can I select specific channels within a server?</b></summary>
 <br>
-A: Currently, the script deletes all your messages from selected servers/DMs. Channel-specific deletion is not yet implemented.
+A: Currently, the script deletes all your messages from selected servers/DMs. Channel-specific deletion is not yet implemented. However, you can use the whitelist to exclude entire servers.
+</details>
+
+<details>
+<summary><b>Q: How do I protect certain servers from deletion?</b></summary>
+<br>
+A: Create a `whitelist.txt` file with the server/DM IDs you want to exclude. See the Whitelist section above for details.
 </details>
 
 <details>

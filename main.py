@@ -44,6 +44,10 @@ def print_info(text: str):
 def print_warning(text: str):
     print(f"{Colors.YELLOW}⚠ {text}{Colors.END}")
 
+def is_call_message(message: Dict) -> bool:
+    """Vérifie si un message est un appel (non supprimable)."""
+    return message.get('call') is not None
+
 def load_token() -> Optional[str]:
     """Charge le token depuis le fichier token.txt"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -237,6 +241,7 @@ class MessageDeleter:
             "total_deleted": 0,
             "failed_deletions": 0,
             "whitelisted_skipped": 0,
+            "call_messages_skipped": 0,
             "servers_processed": 0,
             "dms_processed": 0
         }
@@ -323,32 +328,44 @@ class MessageDeleter:
     
     def delete_messages_batch(self, messages: List[Dict], location_name: str, auto_mode: bool) -> Dict:
         """Supprime les messages en mode batch ou avec vérification."""
+        # Filtrer les messages d'appels
+        deletable_messages = [msg for msg in messages if not is_call_message(msg)]
+        call_messages_count = len(messages) - len(deletable_messages)
+        
+        if call_messages_count > 0:
+            print_warning(f"{call_messages_count} message(s) d'appel détecté(s) - ignorés (non supprimables)")
+            self.stats["call_messages_skipped"] += call_messages_count
+        
         stats = {"deleted": 0, "failed": 0, "skipped": 0}
         
+        if not deletable_messages:
+            print_info("Aucun message supprimable trouvé")
+            return stats
+        
         if not auto_mode:
-            print_info(f"\n{len(messages)} message(s) trouvé(s) dans '{location_name}'")
+            print_info(f"\n{len(deletable_messages)} message(s) supprimable(s) dans '{location_name}'")
             
             # Afficher un aperçu des premiers messages
-            preview_count = min(5, len(messages))
-            print("\n📝 Aperçu des messages:")
-            for i, msg in enumerate(messages[:preview_count], 1):
+            preview_count = min(5, len(deletable_messages))
+            print("\n🔍 Aperçu des messages:")
+            for i, msg in enumerate(deletable_messages[:preview_count], 1):
                 content = msg.get('content', '')[:50]
                 timestamp = msg.get('timestamp', 'Unknown')
                 print(f"  {i}. [{timestamp}] {content}...")
             
-            if len(messages) > preview_count:
-                print(f"  ... et {len(messages) - preview_count} autre(s) message(s)")
+            if len(deletable_messages) > preview_count:
+                print(f"  ... et {len(deletable_messages) - preview_count} autre(s) message(s)")
             
             confirm = input(f"\n{Colors.YELLOW}Supprimer tous ces messages? (OUI/skip): {Colors.END}").strip().upper()
             
             if confirm != "OUI":
                 print_warning("Suppression annulée pour cette location")
-                stats["skipped"] = len(messages)
+                stats["skipped"] = len(deletable_messages)
                 return stats
         
         print_info(f"Suppression en cours...")
         
-        for i, msg in enumerate(messages, 1):
+        for i, msg in enumerate(deletable_messages, 1):
             channel_id = msg.get('channel_id')
             message_id = msg.get('id')
             
@@ -361,10 +378,10 @@ class MessageDeleter:
             if success:
                 stats["deleted"] += 1
                 content = msg.get('content', '')[:30]
-                print(f"  [{i}/{len(messages)}] ✓ Supprimé: {content}...")
+                print(f"  [{i}/{len(deletable_messages)}] ✓ Supprimé: {content}...")
             else:
                 stats["failed"] += 1
-                print_error(f"  [{i}/{len(messages)}] Échec de suppression")
+                print_error(f"  [{i}/{len(deletable_messages)}] Échec de suppression")
             
             time.sleep(DELAY_BETWEEN_DELETIONS)
         
@@ -427,19 +444,22 @@ class MessageDeleter:
         print(f"  • Total messages scrapés: {self.stats['total_scraped']}")
         if self.stats['whitelisted_skipped'] > 0:
             print(f"  • {Colors.YELLOW}Messages exclus (whitelist): {self.stats['whitelisted_skipped']}{Colors.END}")
+        if self.stats['call_messages_skipped'] > 0:
+            print(f"  • {Colors.YELLOW}Messages d'appel ignorés: {self.stats['call_messages_skipped']}{Colors.END}")
         print(f"  • {Colors.GREEN}Total messages supprimés: {self.stats['total_deleted']}{Colors.END}")
         print(f"  • {Colors.RED}Échecs de suppression: {self.stats['failed_deletions']}{Colors.END}")
         
-        success_rate = (self.stats['total_deleted'] / self.stats['total_scraped'] * 100) if self.stats['total_scraped'] > 0 else 0
+        deletable_count = self.stats['total_scraped'] - self.stats['call_messages_skipped']
+        success_rate = (self.stats['total_deleted'] / deletable_count * 100) if deletable_count > 0 else 0
         print(f"\n  • Taux de réussite: {success_rate:.1f}%")
 
 def print_token_instructions():
     """Affiche les instructions détaillées pour récupérer le token."""
     print_header("📖 GUIDE: COMMENT RÉCUPÉRER VOTRE TOKEN DISCORD")
     
-    print(f"{Colors.CYAN}╔══════════════════════════════════════════════════════════╗")
+    print(f"{Colors.CYAN}╔═════════════════════════════════════════════════════════╗")
     print(f"║  MÉTHODE 1: NAVIGATEUR WEB (discord.com)                ║")
-    print(f"╚══════════════════════════════════════════════════════════╝{Colors.END}\n")
+    print(f"╚═════════════════════════════════════════════════════════╝{Colors.END}\n")
     
     print("1. Ouvrez Discord dans votre navigateur:")
     print("   https://discord.com/app\n")
@@ -449,18 +469,18 @@ def print_token_instructions():
     print("3. Allez dans l'onglet 'Console'\n")
     
     print("4. Copiez et collez ce code, puis appuyez sur Entrée:\n")
-    print(f"{Colors.GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.END}")
+    print(f"{Colors.GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.END}")
     token_code = "(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()"
     print(f"{Colors.YELLOW}{token_code}{Colors.END}")
-    print(f"{Colors.GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.END}\n")
+    print(f"{Colors.GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.END}\n")
     
     print("5. Votre token s'affiche entre guillemets\n")
     
     print("6. Copiez-le (SANS les guillemets) et collez-le dans token.txt\n")
     
-    print(f"{Colors.CYAN}╔══════════════════════════════════════════════════════════╗")
+    print(f"{Colors.CYAN}╔═════════════════════════════════════════════════════════╗")
     print(f"║  MÉTHODE 2: APPLICATION DESKTOP                          ║")
-    print(f"╚══════════════════════════════════════════════════════════╝{Colors.END}\n")
+    print(f"╚═════════════════════════════════════════════════════════╝{Colors.END}\n")
     
     print("1. Ouvrez Discord Desktop\n")
     
@@ -470,9 +490,9 @@ def print_token_instructions():
     
     print("3. Suivez les étapes 3 à 6 de la méthode navigateur\n")
     
-    print(f"{Colors.RED}{Colors.BOLD}╔══════════════════════════════════════════════════════════╗")
+    print(f"{Colors.RED}{Colors.BOLD}╔═════════════════════════════════════════════════════════╗")
     print(f"║  ⚠️  AVERTISSEMENT SÉCURITÉ                              ║")
-    print(f"╚══════════════════════════════════════════════════════════╝{Colors.END}\n")
+    print(f"╚═════════════════════════════════════════════════════════╝{Colors.END}\n")
     
     print(f"{Colors.RED}• Ne partagez JAMAIS votre token avec qui que ce soit!")
     print(f"• Votre token = accès TOTAL à votre compte Discord")
@@ -480,6 +500,7 @@ def print_token_instructions():
     print(f"  changez immédiatement votre mot de passe Discord{Colors.END}\n")
 
 def main():
+    
     print_header("🗑️  DISCORD BULK MESSAGE DELETER")
     
     # Charger le token
